@@ -1,88 +1,70 @@
 from flask import Blueprint, request, jsonify
-from models import StudySession
-from extensions import db
-from datetime import datetime
+from models import db, Session
+from flask_cors import cross_origin
 
+# Create the Blueprint
 session_bp = Blueprint('sessions', __name__)
 
-# Get all study sessions
+# GET all sessions
 @session_bp.route('/sessions', methods=['GET'])
+@cross_origin()
 def get_sessions():
-    sessions = StudySession.query.all()
-    return jsonify([s.to_dict() for s in sessions]), 200
+    sessions = Session.query.all()
+    return jsonify([session.to_dict() for session in sessions]), 200
 
-# Get a specific study session by ID
+# GET a single session by ID
 @session_bp.route('/sessions/<int:id>', methods=['GET'])
+@cross_origin()
 def get_session(id):
-    session = StudySession.query.get_or_404(id)
+    session = Session.query.get(id)
+    if not session:
+        return jsonify({"error": "Session not found"}), 404
     return jsonify(session.to_dict()), 200
 
-# Update a specific study session by ID
-@session_bp.route('/sessions/<int:id>', methods=['PATCH'])
-def update_session(id):
-    session = StudySession.query.get_or_404(id)
-    data = request.get_json()
-    session.subject = data.get("subject", session.subject)
-    session.topic = data.get("topic", session.topic)
-    session.duration_minutes = data.get("duration_minutes", session.duration_minutes)
-    
-    # Optional: update date if provided
-    if "date" in data:
-        try:
-            session.date = datetime.fromisoformat(data["date"])
-        except ValueError:
-            return {"error": "Invalid date format. Use ISO 8601 format."}, 400
-
-    try:
-        db.session.commit()
-        return session.to_dict(), 200
-    except Exception as e:
-        db.session.rollback()
-        return {"error": str(e)}, 500
-
-# Delete a specific study session by ID
-@session_bp.route('/sessions/<int:id>', methods=['DELETE'])
-def delete_session(id):
-    session = StudySession.query.get(id)
-    if not session:
-        return {"error": "Study session not found"}, 404
-
-    try:
-        db.session.delete(session)
-        db.session.commit()
-        return {"message": "Study session deleted"}, 200
-    except Exception as e:
-        db.session.rollback()
-        return {"error": str(e)}, 500
-
-# Create a new study session
+# CREATE a new session
 @session_bp.route('/sessions', methods=['POST'])
+@cross_origin()
 def create_session():
     data = request.get_json()
-    subject = data.get("subject")
-    topic = data.get("topic")
-    duration_minutes = data.get("duration_minutes")
-    date_str = data.get("date")  # Optional
+    if not data.get('title') or not data.get('date'):
+        return jsonify({"error": "Title and date are required"}), 400
 
-    if not subject or not topic or not duration_minutes:
-        return {"error": "Subject, topic, and duration are required."}, 400
-
-    try:
-        date = datetime.fromisoformat(date_str) if date_str else datetime.utcnow()
-    except ValueError:
-        return {"error": "Invalid date format. Use ISO 8601 format."}, 400
-
-    new_session = StudySession(
-        subject=subject,
-        topic=topic,
-        duration_minutes=duration_minutes,
-        date=date
+    new_session = Session(
+        title=data['title'],
+        date=data['date'],
+        description=data.get('description', '')
     )
+    db.session.add(new_session)
+    db.session.commit()
+    return jsonify(new_session.to_dict()), 201
 
-    try:
-        db.session.add(new_session)
-        db.session.commit()
-        return new_session.to_dict(), 201
-    except Exception as e:
-        db.session.rollback()
-        return {"error": str(e)}, 500
+# UPDATE a session
+@session_bp.route('/sessions/<int:id>', methods=['PATCH'])
+@cross_origin()
+def update_session(id):
+    session = Session.query.get(id)
+    if not session:
+        return jsonify({"error": "Session not found"}), 404
+
+    data = request.get_json()
+    if 'title' in data:
+        session.title = data['title']
+    if 'date' in data:
+        session.date = data['date']
+    if 'description' in data:
+        session.description = data['description']
+
+    db.session.commit()
+    return jsonify(session.to_dict()), 200
+
+# DELETE a session
+@session_bp.route('/sessions/<int:id>', methods=['DELETE'])
+@cross_origin()
+def delete_session(id):
+    session = Session.query.get(id)
+    if not session:
+        return jsonify({"error": "Session not found"}), 404
+
+    db.session.delete(session)
+    db.session.commit()
+    return jsonify({"message": "Session deleted"}), 200

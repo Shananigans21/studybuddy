@@ -31,11 +31,14 @@ function Reflections() {
   }, []);
 
   const filteredReflections = reflections
-    .filter(
-      (r) =>
-        r.feature.toLowerCase().includes(search.toLowerCase()) ||
-        r.reflection.toLowerCase().includes(search.toLowerCase())
-    )
+    .filter((r) => {
+      const feature = r.feature || "";
+      const reflectionText = r.reflection || "";
+      return (
+        feature.toLowerCase().includes(search.toLowerCase()) ||
+        reflectionText.toLowerCase().includes(search.toLowerCase())
+      );
+    })
     .filter((r) => (filter === "All" ? true : r.category === filter))
     .sort((a, b) => new Date(b.date) - new Date(a.date));
 
@@ -65,7 +68,11 @@ function Reflections() {
   const clearEdit = () => setEditData(null);
 
   if (loading) {
-    return <p style={{ textAlign: "center", marginTop: "2rem" }}>Loading reflections...</p>;
+    return (
+      <p style={{ textAlign: "center", marginTop: "2rem" }}>
+        Loading reflections...
+      </p>
+    );
   }
 
   return (
@@ -74,7 +81,11 @@ function Reflections() {
 
       {error && <p style={{ color: "red" }}>{error}</p>}
 
-      <ReflectionForm onSubmit={handleAddOrUpdate} editData={editData} clearEdit={clearEdit} />
+      <ReflectionForm
+        onSubmit={handleAddOrUpdate}
+        editData={editData}
+        clearEdit={clearEdit}
+      />
 
       <div style={{ marginTop: "1rem", marginBottom: "1rem" }}>
         <input
@@ -95,6 +106,10 @@ function Reflections() {
           <option value="Math">Math</option>
           <option value="Biology">Biology</option>
           <option value="History">History</option>
+          <option value="General">General</option>
+          <option value="Frontend">Frontend</option>
+          <option value="Backend">Backend</option>
+          <option value="Debugging">Debugging</option>
         </select>
       </div>
 

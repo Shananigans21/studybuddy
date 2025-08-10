@@ -1,38 +1,36 @@
 import React, { useState, useEffect } from "react";
 
 function ReflectionForm({ onSubmit, editData, clearEdit }) {
-  const [feature, setFeature] = useState("");
-  const [reflection, setReflection] = useState("");
-  const [category, setCategory] = useState("General");
-  const [date, setDate] = useState("");
+  const [text, setText] = useState("");
+  const [moodRating, setMoodRating] = useState(5);
 
   useEffect(() => {
     if (editData) {
-      setFeature(editData.feature || "");
-      setReflection(editData.reflection || "");
-      setCategory(editData.category || "General");
-      setDate(editData.date || new Date().toISOString().slice(0, 10));
+      setText(editData.text || "");
+      setMoodRating(editData.mood_rating || 5);
     } else {
-      setFeature("");
-      setReflection("");
-      setCategory("General");
-      setDate("");
+      setText("");
+      setMoodRating(5);
     }
   }, [editData]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!feature.trim() || !reflection.trim() || !date) {
-      alert("Please fill out Feature, Reflection, and Date.");
+
+    if (!text.trim()) {
+      alert("Please enter your reflection text.");
       return;
     }
+
     const newReflection = {
       id: editData ? editData.id : Date.now(),
-      feature: feature.trim(),
-      reflection: reflection.trim(),
-      category,
-      date,
+      user_id: 1,          // hardcoded user_id for now, replace with actual
+      session_id: 1,       // hardcoded session_id for now, replace with actual
+      text: text.trim(),
+      mood_rating: moodRating,
+      ai_generated: false,
     };
+
     onSubmit(newReflection);
     if (clearEdit) clearEdit();
   };
@@ -42,21 +40,10 @@ function ReflectionForm({ onSubmit, editData, clearEdit }) {
       <h2>{editData ? "Edit Reflection" : "Add Reflection"}</h2>
 
       <label>
-        Feature:<br />
-        <input
-          type="text"
-          value={feature}
-          onChange={(e) => setFeature(e.target.value)}
-          required
-        />
-      </label>
-      <br />
-
-      <label>
-        Reflection:<br />
+        Reflection Text:<br />
         <textarea
-          value={reflection}
-          onChange={(e) => setReflection(e.target.value)}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
           rows={4}
           required
         />
@@ -64,22 +51,13 @@ function ReflectionForm({ onSubmit, editData, clearEdit }) {
       <br />
 
       <label>
-        Category:<br />
-        <select value={category} onChange={(e) => setCategory(e.target.value)}>
-          <option value="General">General</option>
-          <option value="Frontend">Frontend</option>
-          <option value="Backend">Backend</option>
-          <option value="Debugging">Debugging</option>
-        </select>
-      </label>
-      <br />
-
-      <label>
-        Date:<br />
+        Mood Rating (1-5):<br />
         <input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
+          type="number"
+          min="1"
+          max="5"
+          value={moodRating}
+          onChange={(e) => setMoodRating(Number(e.target.value))}
           required
         />
       </label>

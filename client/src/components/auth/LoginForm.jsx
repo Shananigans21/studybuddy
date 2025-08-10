@@ -1,38 +1,31 @@
-import React, { useState } from 'react';
-import { loginUser } from '../api';  // <-- We'll create this in api.js
+import React, { useState } from "react";
+import { loginUser } from "../api/api";
 
 function LoginForm({ onLogin }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
-  function handleSubmit(e) {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email || !password) {
-      setError('Email and password are required');
+      setError("Email and password are required");
       return;
     }
-
-    loginUser({ email, password })
-      .then((data) => {
-        if (data.token) {
-          localStorage.setItem('token', data.token);
-          setError('');
-          onLogin();
-        } else {
-          setError(data.error || 'Login failed');
-        }
-      })
-      .catch(() => {
-        setError('Server error. Please try again later.');
-      });
-  }
+    try {
+      const data = await loginUser({ email, password });
+      localStorage.setItem("token", data.token || "");
+      setError("");
+      onLogin(data.user);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
 
   return (
     <form onSubmit={handleSubmit}>
       <h2>Login</h2>
       <input
-        name="email"
         type="email"
         placeholder="Email"
         value={email}
@@ -40,14 +33,13 @@ function LoginForm({ onLogin }) {
         required
       />
       <input
-        name="password"
         type="password"
         placeholder="Password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         required
       />
-      {error && <p className="error">{error}</p>}
+      {error && <p style={{ color: "red" }}>{error}</p>}
       <button type="submit">Login</button>
     </form>
   );
